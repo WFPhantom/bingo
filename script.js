@@ -27,7 +27,7 @@ function seedRandom(seed) {
 
 function saveBingoGrid() {
     const gridState = [];
-    document.querySelectorAll('.bingo-square').forEach((square, index) => {
+    document.querySelectorAll('.bingo-square').forEach((square) => {
         gridState.push({
             text: square.textContent,
             clicked: square.classList.contains('clicked')
@@ -43,100 +43,20 @@ function loadBingoGrid() {
     if (savedGrid && savedSeed) {
         document.getElementById('current-seed').textContent = savedSeed;
         const gridState = JSON.parse(savedGrid);
-        const grid = document.querySelector('.bingo-grid');
-        grid.innerHTML = '';
-
-        const columns = ['B', 'I', 'N', 'G', 'O'];
-        columns.forEach(column => {
-            const columnDiv = document.createElement('div');
-            columnDiv.classList.add('bingo-column');
-            columnDiv.textContent = column;
-            grid.appendChild(columnDiv);
-        });
-
-        gridState.forEach((squareState, index) => {
-            const square = document.createElement('div');
-            square.classList.add('bingo-square');
-            if (index === 12) {
-                const img = document.createElement('img');
-                img.src = 'tgalogo.svg';
-                img.alt = 'tgalogo';
-                square.appendChild(img);
-                square.style.cursor = 'default';
-                square.innerHTML += '<span class="free-text">WORLD PREMIERE</span>';
-            } else {
-                square.textContent = squareState.text;
-                if (squareState.clicked) {
-                    square.classList.add('clicked');
-                }
-                square.addEventListener('click', () => {
-                    square.classList.toggle('clicked');
-                    updateSeed(square, index);
-                    saveBingoGrid();
-                });
-            }
-            grid.appendChild(square);
-            adjustFontSize(square);
-        });
-    } else {
-        generateBingoGrid();
-    }
+        renderGrid(gridState.map(s => s.text), gridState.map(s => s.clicked));
+    } else generateBingoGrid();
 }
 
 function generateBingoGrid() {
     let seedInput = document.getElementById('seed-input').value;
     let preselectedLetters = '';
-    if (seedInput.includes('.')) {
-        [seedInput, preselectedLetters] = seedInput.split('.');
-    }
-    if (!seedInput) {
-        seedInput = Math.random().toString();
-    } else if (!seedInput.startsWith('0.')) {
-        seedInput = '0.' + seedInput;
-    }
+    if (seedInput.includes('.')) [seedInput, preselectedLetters] = seedInput.split('.');
+    if (!seedInput) seedInput = Math.random().toString();
+    else if (!seedInput.startsWith('0.')) seedInput = '0.' + seedInput;
     document.getElementById('current-seed').textContent = `Seed: ${seedInput.substring(2)}.${preselectedLetters}`;
-    const grid = document.querySelector('.bingo-grid');
-    grid.innerHTML = '';
-
-    const columns = ['B', 'I', 'N', 'G', 'O'];
-    columns.forEach(column => {
-        const columnDiv = document.createElement('div');
-        columnDiv.classList.add('bingo-column');
-        columnDiv.textContent = column;
-        grid.appendChild(columnDiv);
-    });
-
     const shuffledInputs = shuffleArray(inputs.slice(), seedInput).slice(0, 24);
-    let squareIndex = 0;
-    for (let row = 0; row < 5; row++) {
-        for (let col = 0; col < 5; col++) {
-            const square = document.createElement('div');
-            square.classList.add('bingo-square');
-            if (row === 2 && col === 2) {
-                const img = document.createElement('img');
-                img.src = 'tgalogo.svg';
-                img.alt = 'tgalogo';
-                square.appendChild(img);
-                square.style.cursor = 'default';
-                square.innerHTML += '<span class="free-text">WORLD PREMIERE</span>';
-            } else {
-                square.textContent = shuffledInputs[squareIndex];
-                if (squareIndex < letters.length && preselectedLetters.includes(letters[squareIndex])) {
-                    square.classList.add('clicked');
-                }
-                (function (index) {
-                    square.addEventListener('click', () => {
-                        square.classList.toggle('clicked');
-                        updateSeed(square, index >= 12 ? index + 1 : index);
-                        saveBingoGrid();
-                    });
-                })(squareIndex);
-                squareIndex++;
-            }
-            grid.appendChild(square);
-            adjustFontSize(square);
-        }
-    }
+    const clickedStates = shuffledInputs.map((_, i) => preselectedLetters.includes(letters[i]));
+    renderGrid(shuffledInputs, clickedStates);
     saveBingoGrid();
 }
 
@@ -145,15 +65,10 @@ function updateSeed(square, index) {
     let currentSeedText = currentSeedElement.textContent.replace('Seed: ', '');
     let [seed, preselectedLetters] = currentSeedText.split('.');
     preselectedLetters = preselectedLetters || '';
-    const letterIndex = index >= 12 ? index - 1 : index;
-    const letter = letters[letterIndex];
+    const letter = letters[index];
     if (square.classList.contains('clicked')) {
-        if (!preselectedLetters.includes(letter)) {
-            preselectedLetters += letter;
-        }
-    } else {
-        preselectedLetters = preselectedLetters.replace(letter, '');
-    }
+        if (!preselectedLetters.includes(letter)) preselectedLetters += letter;
+    } else preselectedLetters = preselectedLetters.replace(letter, '');
     currentSeedElement.textContent = `Seed: ${seed}.${preselectedLetters}`;
 }
 
@@ -165,6 +80,46 @@ function adjustFontSize(element) {
     while (element.scrollHeight > element.clientHeight && fontSize > minFontSize) {
         fontSize--;
         element.style.fontSize = fontSize + 'px';
+    }
+}
+
+function renderGrid(squareTexts, clickedStates) {
+    const grid = document.querySelector('.bingo-grid');
+    grid.innerHTML = '';
+
+    const columns = ['B', 'I', 'N', 'G', 'O'];
+    columns.forEach(column => {
+        const columnDiv = document.createElement('div');
+        columnDiv.classList.add('bingo-column');
+        columnDiv.textContent = column;
+        grid.appendChild(columnDiv);
+    });
+
+    for (let i = 0; i < 25; i++) {
+        const square = document.createElement('div');
+        square.classList.add('bingo-square');
+
+        if (i === 12) {
+            const img = document.createElement('img');
+            img.src = 'tgalogo.svg';
+            img.alt = 'tgalogo';
+            square.appendChild(img);
+            square.style.cursor = 'default';
+            square.innerHTML += '<span class="free-text">WORLD PREMIERE</span>';
+        } else {
+            const dataIndex = i > 12 ? i - 1 : i;
+            square.textContent = squareTexts[dataIndex];
+            if (clickedStates[dataIndex]) square.classList.add('clicked');
+            (function(dataIndex) {
+                square.addEventListener('click', () => {
+                    square.classList.toggle('clicked');
+                    updateSeed(square, dataIndex);
+                    saveBingoGrid();
+                });
+            })(dataIndex);
+        }
+        grid.appendChild(square);
+        adjustFontSize(square);
     }
 }
 
