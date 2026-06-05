@@ -101,8 +101,8 @@ function renderGrid(squareTexts, clickedStates) {
 
         if (i === 12) {
             const img = document.createElement('img');
-            img.src = 'tgalogo.svg';
-            img.alt = 'tgalogo';
+            img.src = 'logo.png';
+            img.alt = 'logo';
             square.appendChild(img);
             square.style.cursor = 'default';
             square.innerHTML += '<span class="free-text">WORLD PREMIERE</span>';
